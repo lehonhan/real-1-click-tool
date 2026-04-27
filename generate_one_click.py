@@ -1,4 +1,4 @@
-
+import re
 import csv, os, argparse, textwrap, math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
