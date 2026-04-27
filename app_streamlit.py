@@ -26,9 +26,22 @@ if st.button("GENERATE 1 CLICK", type="primary"):
         cmd += ["--map-image", map_path]
     result = subprocess.run(cmd, capture_output=True, text=True)
     st.code(result.stdout + result.stderr)
-    outs = sorted(Path("output").glob(f"*{province.replace(' ','_')}*.png"))
-    if not outs:
-        outs = sorted(Path("output").glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True)[:3]
-    for p in outs:
-        st.image(str(p), caption=p.name, use_container_width=True)
-        st.download_button("Tải ảnh " + p.name, open(p, "rb"), file_name=p.name)
+    # Display current province outputs: MAP, LANDMARKS, FOOD, then COMMUNES pages
+    import re, zipfile, io
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", province)
+    outs = sorted(Path("output").glob(f"{safe}_*.png"))
+
+    if outs:
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as z:
+            for fp in outs:
+                z.write(fp, arcname=fp.name)
+        st.success(f"Đã tạo {len(outs)} ảnh cho {province}.")
+        st.download_button("Tải tất cả ảnh PNG (.zip)", zip_buffer.getvalue(), file_name=f"{safe}_output.zip")
+    else:
+        st.warning("Chưa thấy file output. Hãy bấm Generate lại hoặc xem log phía trên.")
+
+    for fp in outs:
+        st.subheader(fp.name)
+        st.image(str(fp), caption=fp.name, use_container_width=True)
+        st.download_button("Tải ảnh " + fp.name, open(fp, "rb"), file_name=fp.name)
